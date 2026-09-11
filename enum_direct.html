@@ -415,6 +415,7 @@ function validateBank(){
   SERIES.forEach((s,i)=>{if(s.length!==50) failures.push(`Series ${i+1} length`);});
   if(flat.length!==500) failures.push("Question total");
   const stems=new Set();
+  const scenarios=new Set();
   flat.forEach(q=>{
     if(!q || !q.question) failures.push(`Missing stem ${q?.id}`);
     if(!Array.isArray(q.choices)||q.choices.length!==4) failures.push(`Choice count ${q?.id}`);
