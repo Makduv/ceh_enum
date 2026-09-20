@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CEH Daily Recall</title>
+</head>
+<body>
+<div id="ceh-revision-app" class="w-full text-[var(--viz-text)]" tabindex="0">
+  <section class="mb-4">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div class="min-w-0">
+        <p class="eyebrow">CEH v13 • 20 septembre → 2 octobre 2026</p>
+        <h2 class="text-xl font-semibold tracking-tight">Daily Recall</h2>
+        <p class="mt-1 text-sm text-[var(--viz-muted)]">100 questions par jour en 3 mini-séances • questions en anglais • explications en français</p>
+      </div>
+      <div class="flex gap-2">
+        <button id="ceh-overview-btn" type="button" class="rounded-lg border border-[var(--viz-border)] px-3 py-2 text-sm font-medium">Planning</button>
+        <button id="ceh-today-btn" type="button" class="rounded-lg bg-[var(--viz-accent-bg)] px-3 py-2 text-sm font-medium text-[var(--viz-text)]">Séance du jour</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid gap-4 lg:grid-cols-[230px_minmax(0,1fr)]">
+    <aside class="min-w-0">
+      <div class="rounded-xl border border-[var(--viz-border)] bg-[var(--viz-panel)] p-2">
+        <div class="mb-2 px-2 pt-1 text-xs font-semibold uppercase tracking-wide text-[var(--viz-muted)]">Calendrier</div>
+        <div id="ceh-day-list" class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-1"></div>
+      </div>
+      <div class="mt-3 rounded-xl border border-[var(--viz-border)] bg-[var(--viz-card)] p-3">
+        <div class="text-sm font-semibold">Règle du jeu</div>
+        <p class="mt-1 text-sm text-[var(--viz-muted)]">Réponds d’abord de mémoire. Lis l’explication seulement après. Une mauvaise réponse = information utile à revoir, pas une raison de relire tout le module.</p>
+      </div>
+    </aside>
+
+    <section class="min-w-0">
+      <div id="ceh-overview" class="space-y-4">
+        <div class="rounded-xl border border-[var(--viz-border)] bg-[var(--viz-card)] p-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div class="text-sm font-semibold">Pourquoi ce planning ?</div>
+              <p class="mt-1 text-sm text-[var(--viz-muted)]">Tu continues ton nouveau cours sans abandonner M1–9 et M16–17. Les anciens modules reviennent plusieurs fois avant les 3 jours de révision globale.</p>
+            </div>
+            <div class="rounded-lg border border-[var(--viz-border)] px-3 py-2 text-sm">
+              <span class="font-semibold">Objectif :</span> 25–35 min/jour, fractionnables
+            </div>
+          </div>
+        </div>
+        <div id="ceh-selected-plan" class="rounded-xl border border-[var(--viz-border)] bg-[var(--viz-panel)] p-4"></div>
+        <div class="session-grid" aria-label="Les trois séances quotidiennes">
+          <article><span class="session-no">01</span><div><strong>Rappel direct</strong><small>50 questions • notions et scénarios courts</small></div></article>
+          <article><span class="session-no">02</span><div><strong>Ports</strong><small>20 questions • numéro + TCP/UDP</small></div></article>
+          <article><span class="session-no">03</span><div><strong>Outils</strong><small>30 questions • outil ↔ fonction</small></div></article>
+        </div>
+      </div>
+
+      <div id="ceh-quiz" class="hidden">
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div id="ceh-quiz-day" class="text-sm font-semibold"></div>
+            <div id="ceh-quiz-meta" class="text-sm text-[var(--viz-muted)]"></div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="ceh-mode-normal" type="button" class="rounded-lg bg-[var(--viz-accent-bg)] px-3 py-2 text-sm font-medium">Rappel · 50</button>
+            <button id="ceh-mode-ports" type="button" class="rounded-lg border border-[var(--viz-border)] px-3 py-2 text-sm font-medium">Ports · 20</button>
+            <button id="ceh-mode-tools" type="button" class="rounded-lg border border-[var(--viz-border)] px-3 py-2 text-sm font-medium">Outils · 30</button>
+          </div>
+        </div>
+
+        <div class="h-2 overflow-hidden rounded-full bg-[var(--viz-border)]">
+          <div id="ceh-progress" class="h-full bg-[var(--viz-accent)] transition-[width] duration-200" style="width:0%"></div>
+        </div>
+
+        <div class="mt-4 rounded-xl border border-[var(--viz-border)] bg-[var(--viz-card)] p-4 sm:p-5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span id="ceh-module-badge" class="rounded-full border border-[var(--viz-border)] px-2.5 py-1 text-xs font-semibold"></span>
+            <span id="ceh-counter" class="text-sm text-[var(--viz-muted)]"></span>
+          </div>
+          <h3 id="ceh-question" class="mt-4 text-lg font-semibold leading-snug"></h3>
+          <div id="ceh-options" class="mt-4 grid gap-2"></div>
+          <div id="ceh-feedback" class="mt-4 hidden rounded-lg border border-[var(--viz-border)] p-3" aria-live="polite"></div>
+          <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+            <span id="ceh-shortcut" class="text-xs text-[var(--viz-muted)]">Clavier : 1–4</span>
+            <button id="ceh-next" type="button" class="hidden rounded-lg bg-[var(--viz-accent-bg)] px-4 py-2 text-sm font-semibold">Question suivante</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="ceh-summary" class="hidden space-y-3">
+        <div class="rounded-xl border border-[var(--viz-border)] bg-[var(--viz-card)] p-5">
+          <div class="text-sm text-[var(--viz-muted)]">Résultat</div>
+          <div id="ceh-score" class="mt-1 text-3xl font-semibold"></div>
+          <p id="ceh-score-note" class="mt-2 text-sm text-[var(--viz-muted)]"></p>
+        </div>
+        <div id="ceh-weakness" class="rounded-xl border border-[var(--viz-border)] bg-[var(--viz-panel)] p-4"></div>
+        <div class="flex flex-wrap gap-2">
+          <button id="ceh-retry-wrong" type="button" class="rounded-lg bg-[var(--viz-accent-bg)] px-4 py-2 text-sm font-semibold">Rejouer mes erreurs</button>
+          <button id="ceh-restart" type="button" class="rounded-lg border border-[var(--viz-border)] px-4 py-2 text-sm font-semibold">Refaire le quiz</button>
+          <button id="ceh-back-plan" type="button" class="rounded-lg border border-[var(--viz-border)] px-4 py-2 text-sm font-semibold">Retour au planning</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <style>
+    :root{--viz-text:#eaf0ff;--viz-muted:#94a3bd;--viz-border:rgba(148,163,184,.18);--viz-panel:rgba(14,23,43,.74);--viz-card:rgba(17,28,51,.88);--viz-accent:#62e6c8;--viz-accent-bg:rgba(98,230,200,.14);--viz-series-2:#4ade80;--viz-series-4:#fb7185}
+    *{box-sizing:border-box} body{margin:0;min-height:100vh;background:#07101f;color:var(--viz-text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background-image:radial-gradient(circle at 10% 0%,rgba(60,130,246,.18),transparent 34%),radial-gradient(circle at 100% 18%,rgba(98,230,200,.12),transparent 30%)}
+    #ceh-revision-app{max-width:1180px;margin:auto;padding:34px 24px 56px;outline:none}
+    #ceh-revision-app h2{margin:4px 0;font-size:clamp(2rem,5vw,3.7rem);line-height:1;letter-spacing:-.055em;background:linear-gradient(110deg,#fff 25%,#8cf1d8);-webkit-background-clip:text;color:transparent}
+    #ceh-revision-app p{line-height:1.55}.eyebrow{margin:0;color:#62e6c8!important;font-size:.78rem!important;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+    #ceh-revision-app .grid{display:grid}.lg\:grid-cols-\[230px_minmax\(0\,1fr\)\]{grid-template-columns:250px minmax(0,1fr)}.gap-4{gap:1rem}.gap-3{gap:.75rem}.gap-2{gap:.5rem}.gap-1\.5{gap:.375rem}.space-y-4>*+*{margin-top:1rem}.space-y-3>*+*{margin-top:.75rem}
+    #ceh-revision-app .flex{display:flex}.block{display:block}.flex-wrap{flex-wrap:wrap}.items-end{align-items:flex-end}.items-start{align-items:flex-start}.items-center{align-items:center}.justify-between{justify-content:space-between}.min-w-0{min-width:0}.w-full{width:100%}.hidden{display:none!important}
+    #ceh-revision-app .mt-1{margin-top:.25rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mt-4{margin-top:1rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mr-2{margin-right:.5rem}.p-2{padding:.5rem}.p-3{padding:.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.pt-1{padding-top:.25rem}
+    #ceh-revision-app .text-xs{font-size:.75rem}.text-sm{font-size:.875rem}.text-lg{font-size:1.125rem}.text-3xl{font-size:1.875rem}.font-medium{font-weight:500}.font-semibold{font-weight:700}.uppercase{text-transform:uppercase}.tracking-wide{letter-spacing:.08em}.text-left{text-align:left}.truncate{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.opacity-50{opacity:.5}.rounded-full{border-radius:999px}.rounded-lg{border-radius:12px}.rounded-xl{border-radius:18px}.border{border:1px solid var(--viz-border)}
+    #ceh-revision-app [class*="bg-[var(--viz-card)]"]{background:linear-gradient(145deg,rgba(20,33,59,.96),rgba(10,19,36,.94));box-shadow:0 18px 50px rgba(0,0,0,.18)}
+    #ceh-revision-app [class*="bg-[var(--viz-panel)]"]{background:rgba(12,22,40,.72);backdrop-filter:blur(12px)}
+    #ceh-revision-app [class*="text-[var(--viz-muted)]"]{color:var(--viz-muted)}
+    #ceh-revision-app button{min-height:44px;border:1px solid var(--viz-border);color:var(--viz-text);background:rgba(255,255,255,.025);cursor:pointer;font:inherit;transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease}
+    #ceh-revision-app button:hover:not(:disabled){transform:translateY(-1px);border-color:rgba(98,230,200,.5);background:rgba(98,230,200,.08)}
+    #ceh-revision-app [class*="bg-[var(--viz-accent-bg)]"]{background:linear-gradient(135deg,#62e6c8,#55aef8)!important;color:#04111c!important;border-color:transparent!important;box-shadow:0 8px 25px rgba(98,230,200,.18);font-weight:800}
+    #ceh-revision-app .session-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+    #ceh-revision-app .session-grid article{display:flex;align-items:center;gap:12px;padding:16px;border:1px solid var(--viz-border);border-radius:16px;background:rgba(12,22,40,.68)}
+    #ceh-revision-app .session-grid strong,#ceh-revision-app .session-grid small{display:block}.session-grid small{color:var(--viz-muted);margin-top:3px;line-height:1.35}.session-no{display:grid;place-items:center;min-width:38px;height:38px;border-radius:11px;background:var(--viz-accent-bg);color:var(--viz-accent);font-weight:900;font-size:.8rem}
+    #ceh-revision-app .ceh-day.active { border-color: var(--viz-accent); background: var(--viz-accent-bg); }
+    #ceh-revision-app .ceh-day{position:relative}.ceh-day.done::after{content:'✓';position:absolute;right:10px;top:9px;color:var(--viz-accent);font-weight:900}
+    #ceh-revision-app .ceh-answer{text-align:left;width:100%;min-height:54px;background:rgba(255,255,255,.018)}
+    #ceh-revision-app .ceh-answer.correct{border-color:var(--viz-series-2);background:rgba(74,222,128,.1)}
+    #ceh-revision-app .ceh-answer.wrong{border-color:var(--viz-series-4);background:rgba(251,113,133,.1)}
+    #ceh-revision-app .h-2{height:8px;background:var(--viz-border)}.overflow-hidden{overflow:hidden}#ceh-progress{height:100%;background:linear-gradient(90deg,#62e6c8,#55aef8);transition:width .2s}.transition-\[width\]{transition:width .2s}
+    #ceh-revision-app button:focus-visible { outline: 2px solid var(--viz-accent); outline-offset: 2px; }
+    @media(max-width:850px){#ceh-revision-app{padding:22px 14px 40px}#ceh-revision-app .lg\:grid-cols-\[230px_minmax\(0\,1fr\)\]{grid-template-columns:1fr}#ceh-day-list{grid-template-columns:repeat(3,1fr)}.session-grid{grid-template-columns:1fr!important}}
+    @media(max-width:520px){#ceh-day-list{grid-template-columns:repeat(2,1fr)}#ceh-revision-app h2{font-size:2.4rem}#ceh-revision-app .ceh-answer{font-size:.86rem}}
+  </style>
+
+  <script>
+  (() => {
+    const root = document.getElementById('ceh-revision-app');
+    if (!root || root.dataset.ready === '1') return;
+    root.dataset.ready = '1';
+
+    const DATA = {"questions":[{"m":1,"q":"Which document defines what a penetration tester is allowed to attack?","o":["Rules of Engagement (ROE)","Service Level Agreement (SLA)","Business Impact Analysis (BIA)","Certificate Policy (CP)"],"a":0,"e":"Le ROE fixe le périmètre, les horaires, les techniques autorisées/interdites et les contacts d’escalade.","t":"concept"},{"m":1,"q":"Which phase normally comes immediately after reconnaissance in the classic ethical-hacking flow?","o":["Scanning","Covering tracks","Maintaining access","Reporting"],"a":0,"e":"Après la reconnaissance, on cherche typiquement à identifier les hôtes, ports, services et versions par scanning.","t":"concept"},{"m":1,"q":"What does a CVE identifier represent?","o":["A specific publicly identified vulnerability","A severity score","An exploit reliability score","A firewall rule"],"a":0,"e":"CVE est l’identifiant d’une vulnérabilité connue ; CVSS sert plutôt à en exprimer la sévérité.","t":"concept"},{"m":1,"q":"What is the main purpose of CVSS?","o":["Rate vulnerability severity","Prove exploitability","Assign a CVE ID","Measure business revenue impact"],"a":0,"e":"CVSS fournit un score de sévérité technique. Il ne prouve pas qu’une faille est exploitable dans ton contexte.","t":"concept"},{"m":1,"q":"In a gray-box test, what does the tester typically receive?","o":["Limited internal knowledge or credentials","No information at all","Full source code and all admin passwords","Only public DNS records"],"a":0,"e":"Le gray box se situe entre black box et white box : le testeur reçoit une connaissance ou des accès partiels.","t":"concept"},{"m":2,"q":"Which tool is commonly used to gather emails, hosts, and subdomains from public sources?","o":["theHarvester","Hashcat","Hydra","Responder"],"a":0,"e":"theHarvester sert à la reconnaissance OSINT sur des sources publiques.","t":"tool"},{"m":2,"q":"Which DNS record maps a hostname to an IPv4 address?","o":["A","MX","TXT","PTR"],"a":0,"e":"Un enregistrement A associe un nom à une adresse IPv4 ; AAAA est l’équivalent IPv6.","t":"port"},{"m":2,"q":"Which DNS record identifies mail servers for a domain?","o":["MX","NS","CNAME","SOA"],"a":0,"e":"MX indique les serveurs de messagerie responsables du domaine.","t":"port"},{"m":2,"q":"A WHOIS lookup is mainly useful for discovering what?","o":["Domain registration information","Local Windows password hashes","Wireless encryption keys","Running processes on a server"],"a":0,"e":"WHOIS peut révéler registrar, dates, nameservers et parfois des informations de contact selon la confidentialité.","t":"tool"},{"m":2,"q":"Which Google operator restricts results to a specific domain?","o":["site:","filetype:","inurl:","cache:"],"a":0,"e":"site: limite la recherche à un domaine ou sous-domaine donné.","t":"tool"},{"m":3,"q":"Which Nmap option performs a TCP SYN scan?","o":["-sS","-sT","-sU","-O"],"a":0,"e":"-sS envoie un SYN et interprète la réponse sans terminer la connexion TCP complète.","t":"tool"},{"m":3,"q":"Which Nmap option enables OS detection?","o":["-O","-sV","-Pn","-sn"],"a":0,"e":"-O active l’OS detection ; -sV vise plutôt la détection de versions de services.","t":"tool"},{"m":3,"q":"Which Nmap option is used for service/version detection?","o":["-sV","-O","-sN","-F"],"a":0,"e":"-sV interroge les services pour estimer leur produit et leur version.","t":"tool"},{"m":3,"q":"What is banner grabbing used for?","o":["Identify a service or software version","Crack password hashes","Change a MAC address","Encrypt traffic"],"a":0,"e":"Le banner grabbing récupère les informations exposées par un service pour aider à l’identifier.","t":"concept"},{"m":3,"q":"Which scan completes the full TCP three-way handshake?","o":["TCP connect scan","SYN scan","NULL scan","FIN scan"],"a":0,"e":"Le TCP connect scan utilise connect() et termine le handshake, contrairement au SYN scan.","t":"concept"},{"m":4,"q":"Which port is normally used by SNMP queries?","o":["UDP 161","TCP 445","TCP 3389","UDP 53"],"a":0,"e":"SNMP utilise généralement UDP 161 pour les requêtes et UDP 162 pour les traps.","t":"port"},{"m":4,"q":"Which SNMP version provides user-based authentication and encryption?","o":["SNMPv3","SNMPv1","SNMPv2c","SNMPv2"],"a":0,"e":"SNMPv3 ajoute authentification utilisateur et chiffrement ; v1/v2c reposent souvent sur des community strings.","t":"concept"},{"m":4,"q":"Which port is most associated with SMB on modern Windows networks?","o":["TCP 445","TCP 21","UDP 161","TCP 25"],"a":0,"e":"SMB direct sur TCP utilise le port 445.","t":"port"},{"m":4,"q":"Which tool is commonly used to enumerate SMB/Samba information from Linux?","o":["enum4linux","Nikto","Aircrack-ng","sqlmap"],"a":0,"e":"enum4linux automatise plusieurs requêtes d’énumération SMB/NetBIOS.","t":"tool"},{"m":4,"q":"Which protocol is commonly queried on TCP/UDP 389 for directory information?","o":["LDAP","RDP","SMTP","SNMP"],"a":0,"e":"LDAP utilise typiquement 389 ; LDAPS utilise 636.","t":"port"},{"m":5,"q":"What is a false positive in vulnerability scanning?","o":["A reported vulnerability that is not actually present or exploitable","A real vulnerability the scanner missed","A successful exploit","A patched vulnerability with a CVE"],"a":0,"e":"Un faux positif est un résultat signalé à tort ; il faut le valider avant de conclure.","t":"concept"},{"m":5,"q":"Why can a credentialed vulnerability scan be more accurate?","o":["It can inspect local configuration and patch state","It automatically exploits every finding","It bypasses all firewalls","It disables endpoint security"],"a":0,"e":"Avec des identifiants autorisés, le scanner peut vérifier localement versions, correctifs et configurations.","t":"concept"},{"m":5,"q":"Which tool is a vulnerability scanner?","o":["Nessus","Wireshark","Hydra","Aircrack-ng"],"a":0,"e":"Nessus est un scanner de vulnérabilités ; Wireshark analyse les paquets et Hydra teste des authentifications.","t":"tool"},{"m":5,"q":"What does CVSS primarily describe?","o":["Technical severity of a vulnerability","The exact business loss","Whether an exploit exists in Metasploit","The age of the affected server"],"a":0,"e":"CVSS mesure surtout la sévérité technique ; le risque réel dépend aussi du contexte et des mesures en place.","t":"concept"},{"m":5,"q":"Why should a scanner finding be manually validated?","o":["The finding may be a false positive or not exploitable in context","Every scanner always uses default passwords","Manual validation changes the CVE","It is required to generate traffic"],"a":0,"e":"La présence d’une CVE ne signifie pas automatiquement qu’elle est exploitable dans l’environnement réel.","t":"concept"},{"m":6,"q":"Which tool is mainly used for online password guessing against network services?","o":["Hydra","Hashcat","John the Ripper","Volatility"],"a":0,"e":"Hydra teste des identifiants directement contre des services réseau : c’est du cracking/guessing en ligne.","t":"tool"},{"m":6,"q":"Which tool is primarily used for offline password-hash cracking with GPU acceleration?","o":["Hashcat","Responder","Netcat","Nikto"],"a":0,"e":"Hashcat travaille sur des hashes récupérés, donc hors ligne, et peut exploiter GPU/OpenCL/CUDA.","t":"tool"},{"m":6,"q":"What is privilege escalation?","o":["Gaining permissions higher than the current account","Discovering subdomains","Capturing Wi-Fi beacons","Encrypting a file"],"a":0,"e":"L’escalade de privilèges vise à passer vers des droits supérieurs, par exemple utilisateur vers admin/root.","t":"concept"},{"m":6,"q":"In current Meterpreter usage, which extension commonly provides Mimikatz-like credential functions?","o":["kiwi","espia","stdapi","incognito only"],"a":0,"e":"L’extension kiwi fournit de nombreuses fonctions autrefois associées à Mimikatz dans Meterpreter.","t":"tool"},{"m":6,"q":"What is the main goal of persistence?","o":["Regain access after reboot or logout","Hide a wireless SSID","Increase packet size","Resolve DNS names"],"a":0,"e":"La persistance consiste à conserver ou retrouver l’accès à un système dans la durée.","t":"concept"},{"m":7,"q":"What distinguishes a worm from a traditional virus?","o":["A worm can self-propagate without attaching to a host file","A worm cannot use networks","A virus never needs user interaction","A virus always encrypts files"],"a":0,"e":"Un ver se propage de manière autonome ; un virus classique s’attache généralement à un hôte ou fichier.","t":"concept"},{"m":7,"q":"What is a Trojan?","o":["Malware disguised as legitimate software","A self-replicating network packet","A hardware firewall","A type of hashing algorithm"],"a":0,"e":"Un cheval de Troie se présente comme légitime pour pousser l’utilisateur à l’exécuter.","t":"concept"},{"m":7,"q":"What is the primary objective of ransomware?","o":["Deny access to data and demand payment","Enumerate DNS records","Improve system availability","Capture only wireless beacons"],"a":0,"e":"Le ransomware chiffre ou bloque l’accès aux données puis exige généralement une rançon.","t":"concept"},{"m":7,"q":"What is fileless malware designed to do?","o":["Execute largely in memory or abuse trusted system tools","Only infect PDF files","Require a USB device","Operate only on routers"],"a":0,"e":"Le fileless malware réduit les artefacts sur disque en utilisant la mémoire ou des outils légitimes du système.","t":"concept"},{"m":7,"q":"What is a rootkit mainly intended to provide?","o":["Stealthy privileged access and hiding of malicious activity","Web application scanning","DNS zone transfers","Email encryption"],"a":0,"e":"Un rootkit vise à cacher des composants ou activités malveillantes et souvent à maintenir un accès privilégié.","t":"concept"},{"m":8,"q":"Which tool is widely used to capture and analyze network packets?","o":["Wireshark","Nessus","Hydra","John the Ripper"],"a":0,"e":"Wireshark est un analyseur de protocoles et de paquets.","t":"tool"},{"m":8,"q":"What does promiscuous mode allow a network interface to do?","o":["Receive frames not addressed specifically to its own MAC","Automatically crack WPA2","Route all Internet traffic","Disable ARP"],"a":0,"e":"Le mode promiscuous permet à l’interface de remettre à l’OS davantage de trames observées sur le segment.","t":"concept"},{"m":8,"q":"What is the purpose of ARP poisoning?","o":["Associate an attacker-controlled MAC with another host's IP","Change a DNS MX record","Exhaust DHCP addresses only","Encrypt Ethernet frames"],"a":0,"e":"L’empoisonnement ARP falsifie les associations IP↔MAC pour détourner ou intercepter du trafic local.","t":"concept"},{"m":8,"q":"What is MAC flooding intended to overflow?","o":["A switch CAM/MAC address table","A DNS cache","A routing table on the Internet","A certificate store"],"a":0,"e":"Le MAC flooding remplit la table CAM d’un switch avec de nombreuses adresses MAC factices.","t":"concept"},{"m":8,"q":"What does DHCP starvation attempt to exhaust?","o":["Available addresses in a DHCP pool","TCP sequence numbers","DNS cache entries","Wireless channels"],"a":0,"e":"Une attaque DHCP starvation consomme les baux disponibles pour empêcher les clients légitimes d’obtenir une adresse.","t":"concept"},{"m":9,"q":"What is spear phishing?","o":["A targeted phishing attack against a specific person or group","Phishing only by SMS","A physical tailgating attack","A denial-of-service technique"],"a":0,"e":"Le spear phishing est personnalisé et ciblé, contrairement au phishing de masse.","t":"concept"},{"m":9,"q":"What is whaling?","o":["Phishing targeting senior executives or high-value individuals","Voice phishing","USB baiting","DNS poisoning"],"a":0,"e":"Le whaling cible des personnes à forte valeur, souvent des cadres dirigeants.","t":"concept"},{"m":9,"q":"Which term refers to phishing by SMS?","o":["Smishing","Vishing","Pretexting","Baiting"],"a":0,"e":"Smishing = SMS phishing ; vishing = voice phishing.","t":"concept"},{"m":9,"q":"Which term refers to phishing by voice or phone calls?","o":["Vishing","Smishing","Tailgating","Quid pro quo"],"a":0,"e":"Vishing utilise la voix ou le téléphone pour manipuler la victime.","t":"concept"},{"m":9,"q":"What is pretexting?","o":["Creating a believable fabricated scenario to obtain information or action","Flooding a switch table","Injecting SQL into a form","Cracking a Wi-Fi handshake"],"a":0,"e":"Le pretexting repose sur une histoire crédible inventée pour obtenir confiance, information ou action.","t":"concept"},{"m":10,"q":"What does a TCP SYN flood attempt to exhaust?","o":["Resources used for half-open TCP connections","DNS MX records","ARP cache entries only","Wireless encryption keys"],"a":0,"e":"Le SYN flood envoie de nombreux SYN sans terminer le handshake, consommant la file de connexions semi-ouvertes.","t":"concept"},{"m":10,"q":"What is the main difference between DoS and DDoS?","o":["DDoS uses many distributed sources","DoS always uses malware","DDoS cannot target web servers","DoS requires physical access"],"a":0,"e":"DDoS distribue l’attaque sur de nombreuses machines ou sources, souvent un botnet.","t":"concept"},{"m":10,"q":"Slowloris primarily targets what resource?","o":["Web server connection slots by keeping HTTP connections open","DNS zone-transfer records","Wi-Fi association tables","Local password hashes"],"a":0,"e":"Slowloris maintient de nombreuses requêtes HTTP incomplètes pour monopoliser les connexions du serveur.","t":"tool"},{"m":10,"q":"Which defense can directly reduce the impact of request floods?","o":["Rate limiting","Disabling TLS","Publishing server banners","Using default credentials"],"a":0,"e":"Le rate limiting limite la fréquence des requêtes et peut réduire l’effet de certains floods.","t":"concept"},{"m":10,"q":"A botnet is commonly used in DDoS because it provides what?","o":["Many distributed compromised hosts","A single trusted source IP","Automatic encryption of databases","A replacement for DNS"],"a":0,"e":"Un botnet offre un grand nombre de machines capables d’émettre du trafic simultanément.","t":"concept"},{"m":11,"q":"What is the most valuable item to an attacker in many web session-hijacking attacks?","o":["A valid session token or cookie","The victim's screen resolution","The DNS TTL","The server's favicon"],"a":0,"e":"Un cookie/token de session valide peut permettre de reprendre une session authentifiée sans connaître le mot de passe.","t":"concept"},{"m":11,"q":"What is session fixation?","o":["Forcing or predicting a session ID that the victim later authenticates","Flooding a server with SYN packets","Changing a MAC address","Cracking an offline hash"],"a":0,"e":"La session fixation pousse la victime à utiliser un identifiant de session connu de l’attaquant.","t":"concept"},{"m":11,"q":"Which control helps protect session cookies from being sent over plaintext HTTP?","o":["Secure cookie attribute with HTTPS","Disabling SameSite","Using shorter passwords","Enabling directory listing"],"a":0,"e":"L’attribut Secure demande au navigateur de n’envoyer le cookie que via HTTPS.","t":"concept"},{"m":11,"q":"What does the HttpOnly cookie attribute mainly reduce?","o":["JavaScript access to the cookie","Network latency","Password length","DNS spoofing"],"a":0,"e":"HttpOnly empêche les scripts côté client d’accéder directement au cookie, limitant certains vols via XSS.","t":"concept"},{"m":11,"q":"Why should a web application regenerate a session ID after login?","o":["To reduce session fixation risk","To speed up DNS resolution","To disable TLS","To create a CVE"],"a":0,"e":"Changer l’ID de session après authentification empêche qu’un ID pré-authentification imposé reste valide.","t":"concept"},{"m":12,"q":"What is the main difference between an IDS and an IPS?","o":["An IPS can actively block traffic; an IDS primarily detects and alerts","An IDS encrypts traffic; an IPS hashes it","An IDS is wireless only","An IPS cannot inspect packets"],"a":0,"e":"Un IDS détecte/alerte ; un IPS est en ligne et peut bloquer ou rejeter le trafic.","t":"concept"},{"m":12,"q":"What is a honeypot?","o":["A decoy system or service designed to attract and observe attackers","A password manager","A packet encryption standard","A DNS resolver"],"a":0,"e":"Un honeypot est un leurre instrumenté pour détecter ou étudier des activités hostiles.","t":"concept"},{"m":12,"q":"Which Nmap option can fragment probe packets to complicate simple filtering or detection?","o":["-f","-O","-sV","-sn"],"a":0,"e":"-f fragmente les paquets IP de scan ; certains dispositifs modernes réassemblent toutefois correctement ces fragments.","t":"tool"},{"m":12,"q":"What is the idea behind using decoy scan addresses?","o":["Make it harder to identify which source actually initiated the scan","Encrypt all scan traffic","Disable the target firewall","Change the target's MAC address"],"a":0,"e":"Les decoys mélangent l’adresse réelle avec d’autres sources apparentes dans les journaux du scan.","t":"concept"},{"m":12,"q":"Why can traffic encoding or obfuscation sometimes evade simplistic detection rules?","o":["The payload may no longer match a simple signature exactly","It disables TCP checksums","It changes a CVE score","It forces the firewall offline"],"a":0,"e":"Les signatures naïves peuvent rater un contenu transformé ; les moteurs modernes normalisent souvent le trafic avant inspection.","t":"concept"},{"m":13,"q":"Which tool is commonly used to scan web servers for dangerous files, outdated software, and common misconfigurations?","o":["Nikto","Hashcat","Airodump-ng","Responder"],"a":0,"e":"Nikto est un scanner orienté serveurs web et mauvaises configurations connues.","t":"tool"},{"m":13,"q":"Why is directory listing risky on a web server?","o":["It can expose files and directory structure to users","It disables TLS automatically","It encrypts backups","It prevents indexing"],"a":0,"e":"Le directory listing peut révéler fichiers sensibles, sauvegardes, noms internes ou structure applicative.","t":"concept"},{"m":13,"q":"What does a web server banner reveal?","o":["Potential product and version information","A user's password hash","A Wi-Fi channel key","A DNS zone transfer"],"a":0,"e":"Une bannière peut divulguer le logiciel et parfois sa version, utiles pour rechercher des failles connues.","t":"concept"},{"m":13,"q":"What is a strong defense against exploitation of known web-server vulnerabilities?","o":["Timely patching and hardening","Keeping default accounts enabled","Enabling verbose banners","Allowing directory listing"],"a":0,"e":"Patcher et durcir la configuration réduit l’exposition aux vulnérabilités connues et aux erreurs de configuration.","t":"concept"},{"m":13,"q":"Why are default credentials on an admin interface dangerous?","o":["They are widely known and easily tested","They make TLS slower","They increase DNS TTL","They prevent logging"],"a":0,"e":"Les identifiants par défaut sont souvent documentés publiquement et testés en priorité.","t":"concept"},{"m":14,"q":"What is Burp Suite Proxy mainly used for?","o":["Intercepting and modifying HTTP(S) requests and responses","Cracking WPA handshakes","Scanning SNMP devices","Dumping Windows hashes"],"a":0,"e":"Le proxy de Burp permet d’observer, intercepter et modifier le trafic entre navigateur et application web.","t":"tool"},{"m":14,"q":"What is IDOR?","o":["Unauthorized access to objects by changing a direct identifier","A TCP flood","A DNS record type","A wireless encryption mode"],"a":0,"e":"IDOR apparaît quand l’application fait confiance à un identifiant fourni par l’utilisateur sans vérifier l’autorisation.","t":"concept"},{"m":14,"q":"What does reflected XSS require?","o":["Attacker-controlled input is returned into the page without safe handling","A database UNION query","A wireless monitor interface","A SYN backlog"],"a":0,"e":"En XSS réfléchi, l’entrée malveillante est renvoyée immédiatement dans la réponse et exécutée par le navigateur.","t":"concept"},{"m":14,"q":"What is CSRF designed to abuse?","o":["A victim's authenticated browser session to perform an unwanted action","A switch CAM table","A password hash file","A DNS resolver cache"],"a":0,"e":"CSRF pousse le navigateur d’un utilisateur déjà authentifié à envoyer une requête non désirée.","t":"concept"},{"m":14,"q":"Which vulnerability lets an attacker access files outside the intended web directory using sequences like ../?","o":["Path traversal","SYN flood","ARP poisoning","Session fixation"],"a":0,"e":"Le path traversal manipule les chemins pour sortir du répertoire prévu et atteindre d’autres fichiers.","t":"concept"},{"m":15,"q":"Which SQL injection technique combines attacker-selected rows with the original query result?","o":["UNION-based SQL injection","ARP poisoning","Session fixation","DNS tunneling"],"a":0,"e":"UNION SELECT permet de joindre les résultats d’une requête injectée à ceux de la requête originale si les colonnes sont compatibles.","t":"concept"},{"m":15,"q":"Which SQL injection type infers true/false conditions from changes in the application's response?","o":["Boolean-based blind SQL injection","Stored XSS","SYN scan","Pass-the-hash"],"a":0,"e":"La SQLi booléenne déduit l’information via des différences de réponse selon qu’une condition est vraie ou fausse.","t":"concept"},{"m":15,"q":"Which SQL injection type uses deliberate database delays to infer information?","o":["Time-based blind SQL injection","MAC flooding","Session replay","DNSSEC poisoning"],"a":0,"e":"La SQLi temporelle utilise des fonctions de délai et mesure le temps de réponse pour inférer des bits d’information.","t":"concept"},{"m":15,"q":"What is the best general defense against SQL injection in application code?","o":["Parameterized queries / prepared statements","Base64 encoding input","Disabling cookies","Changing the server banner"],"a":0,"e":"Les requêtes paramétrées séparent la structure SQL des données utilisateurs et bloquent la majorité des injections classiques.","t":"concept"},{"m":15,"q":"Why is the input ' OR '1'='1 often used in demonstrations?","o":["It can turn an intended condition into an always-true expression","It creates an encrypted cookie","It performs a DNS zone transfer","It changes a MAC table"],"a":0,"e":"La condition '1'='1' est toujours vraie et illustre comment une logique SQL peut être détournée si l’entrée est concaténée.","t":"concept"},{"m":16,"q":"What does monitor mode allow a Wi-Fi adapter to do?","o":["Capture raw 802.11 frames without being associated as a normal client","Automatically join any WPA3 network","Operate only as an access point","Disable RF transmissions"],"a":0,"e":"Le mode monitor permet d’écouter les trames 802.11 sur un canal, contrairement au mode managed utilisé comme client Wi-Fi normal.","t":"concept"},{"m":16,"q":"Which Aircrack-ng suite tool is mainly used to capture nearby 802.11 traffic and handshakes?","o":["airodump-ng","aireplay-ng","aircrack-ng","airmon-ng"],"a":0,"e":"airodump-ng capture et affiche les réseaux/clients ; airmon-ng gère le mode monitor, aireplay-ng injecte et aircrack-ng craque.","t":"tool"},{"m":16,"q":"Which Aircrack-ng suite tool is commonly used for packet injection and deauthentication testing?","o":["aireplay-ng","airodump-ng","airmon-ng","aircrack-ng"],"a":0,"e":"aireplay-ng sert aux injections 802.11, notamment les tests de désauthentification en laboratoire autorisé.","t":"tool"},{"m":16,"q":"Which Aircrack-ng suite tool is used to test captured WPA/WPA2 material against a wordlist?","o":["aircrack-ng","airmon-ng","airodump-ng","iwconfig"],"a":0,"e":"aircrack-ng peut tester des candidats de mot de passe contre un handshake/PMKID capturé.","t":"tool"},{"m":16,"q":"Why is a WPA/WPA2 handshake useful for offline password testing?","o":["It provides cryptographic material to verify password guesses without repeatedly contacting the AP","It reveals the plaintext password directly","It disables the access point","It contains the router admin password"],"a":0,"e":"Le handshake ne contient pas le mot de passe en clair ; il permet de vérifier hors ligne si un candidat produit les bonnes valeurs cryptographiques.","t":"concept"},{"m":17,"q":"What file format is primarily used for Android application packages?","o":["APK","IPA","EXE","DMG"],"a":0,"e":"APK est le format de paquet Android ; IPA est associé aux applications iOS.","t":"concept"},{"m":17,"q":"Which command-line tool is commonly used to communicate with Android devices for debugging?","o":["adb","nmap","sqlmap","airmon-ng"],"a":0,"e":"ADB (Android Debug Bridge) permet de communiquer avec un appareil Android lorsque le débogage est autorisé.","t":"tool"},{"m":17,"q":"What is rooting on Android?","o":["Obtaining elevated/root privileges on the device","Encrypting an APK","Changing a SIM card","Enabling airplane mode"],"a":0,"e":"Le rooting vise à obtenir des privilèges élevés similaires à root sur Android.","t":"concept"},{"m":17,"q":"What is jailbreaking on iOS?","o":["Removing or bypassing platform restrictions to gain broader control","Installing a normal App Store update","Changing the screen lock only","Enabling iCloud backup"],"a":0,"e":"Le jailbreak contourne des restrictions iOS pour permettre davantage de contrôle et d’exécution non autorisée par défaut.","t":"concept"},{"m":17,"q":"Which tool is widely used for dynamic instrumentation of mobile applications?","o":["Frida","Nikto","Responder","John the Ripper"],"a":0,"e":"Frida permet d’instrumenter dynamiquement des applications, d’observer et de modifier le comportement à l’exécution.","t":"tool"},{"m":18,"q":"Which protocol is commonly used for lightweight publish/subscribe messaging in IoT?","o":["MQTT","SMB","RDP","SNMP"],"a":0,"e":"MQTT est très courant dans l’IoT pour la messagerie publish/subscribe légère.","t":"port"},{"m":18,"q":"What is the default TCP port for unencrypted MQTT?","o":["1883","502","445","3389"],"a":0,"e":"MQTT sans TLS utilise typiquement TCP 1883 ; MQTT sur TLS utilise souvent 8883.","t":"port"},{"m":18,"q":"Which TCP port is commonly associated with Modbus/TCP in industrial environments?","o":["502","161","25","110"],"a":0,"e":"Modbus/TCP utilise couramment TCP 502.","t":"port"},{"m":18,"q":"Why are default credentials especially risky on IoT devices?","o":["They may be identical across many deployed devices and publicly known","They prevent firmware updates","They force TLS 1.3","They disable remote access"],"a":0,"e":"Des identifiants par défaut réutilisés à grande échelle permettent des compromissions automatisées massives.","t":"concept"},{"m":18,"q":"What is a key defensive principle for OT/ICS networks?","o":["Network segmentation and tightly controlled access","Expose controllers directly to the Internet","Use shared admin passwords everywhere","Disable logging"],"a":0,"e":"La segmentation limite les chemins d’accès vers les systèmes industriels et réduit l’impact d’une compromission IT.","t":"concept"},{"m":19,"q":"In cloud security, what does the shared responsibility model mean?","o":["The provider and customer each have security responsibilities","The provider is responsible for everything","The customer is responsible only for billing","Security is outsourced to the ISP"],"a":0,"e":"La répartition dépend du modèle IaaS/PaaS/SaaS : le fournisseur sécurise certaines couches, le client conserve d’autres responsabilités.","t":"concept"},{"m":19,"q":"Which control most directly reduces damage from a compromised cloud identity?","o":["Least privilege IAM permissions","Public storage buckets","Permanent access keys","Disabling MFA"],"a":0,"e":"Le moindre privilège limite les actions qu’une identité compromise peut effectuer.","t":"concept"},{"m":19,"q":"What is a common risk of a publicly exposed cloud storage bucket?","o":["Unauthorized data disclosure","Automatic password hashing","Improved network segmentation","Stronger MFA"],"a":0,"e":"Une mauvaise configuration de stockage peut rendre des données accessibles sans autorisation.","t":"concept"},{"m":19,"q":"Why is MFA important for cloud administrative accounts?","o":["A stolen password alone is less likely to be sufficient","It encrypts all stored files automatically","It patches virtual machines","It changes public IP addresses"],"a":0,"e":"MFA ajoute un facteur supplémentaire et réduit l’impact d’un mot de passe compromis.","t":"concept"},{"m":19,"q":"Why are long-lived cloud access keys risky?","o":["If leaked, they may remain usable for a long time","They force TLS downgrade","They disable logging","They cannot be revoked"],"a":0,"e":"Des clés statiques oubliées dans du code ou des dépôts peuvent offrir un accès durable ; les identités temporaires sont préférables.","t":"concept"},{"m":20,"q":"Which algorithm is symmetric?","o":["AES","RSA","ECC","DSA"],"a":0,"e":"AES utilise la même clé secrète pour chiffrer et déchiffrer.","t":"concept"},{"m":20,"q":"Which algorithm is asymmetric?","o":["RSA","AES","ChaCha20","3DES"],"a":0,"e":"RSA utilise une paire de clés publique/privée.","t":"concept"},{"m":20,"q":"What is the primary purpose of SHA-256?","o":["Cryptographic hashing","Symmetric encryption","Key exchange only","Packet routing"],"a":0,"e":"SHA-256 produit une empreinte de taille fixe ; ce n’est pas un algorithme de chiffrement réversible.","t":"concept"},{"m":20,"q":"What does a digital signature primarily provide?","o":["Integrity, authenticity, and non-repudiation properties","Confidentiality by itself","Compression","IP address translation"],"a":0,"e":"Une signature vérifie que le contenu n’a pas été modifié et qu’il a été signé avec la clé privée correspondante.","t":"concept"},{"m":20,"q":"Why is a unique salt added before hashing passwords?","o":["To make identical passwords produce different hashes and hinder precomputed tables","To encrypt the password reversibly","To shorten the hash","To replace MFA"],"a":0,"e":"Le sel unique empêche notamment deux mêmes mots de passe d’avoir le même hash et réduit l’efficacité des rainbow tables.","t":"concept"}],"modules":{"1":"Introduction to Ethical Hacking","2":"Footprinting & Reconnaissance","3":"Scanning Networks","4":"Enumeration","5":"Vulnerability Analysis","6":"System Hacking","7":"Malware Threats","8":"Sniffing","9":"Social Engineering","10":"Denial-of-Service","11":"Session Hijacking","12":"Evading IDS/Firewalls/Honeypots","13":"Hacking Web Servers","14":"Hacking Web Applications","15":"SQL Injection","16":"Hacking Wireless Networks","17":"Hacking Mobile Platforms","18":"IoT & OT Hacking","19":"Cloud Computing","20":"Cryptography"},"days":[{"date":"21/09","day":"Lundi","study":"Cours : bloc M10–15","mods":[1,2,3,4,16],"count":20,"why":"Réactivation des premiers modules + Wi‑Fi pendant que tu attaques le bloc 10–15."},{"date":"22/09","day":"Mardi","study":"Cours : bloc M10–15","mods":[5,6,17],"count":18,"why":"Vulnérabilités + System Hacking + Mobile : beaucoup d’outils à garder actifs."},{"date":"23/09","day":"Mercredi","study":"Cours : bloc M10–15","mods":[7,8,9,16],"count":20,"why":"Malware, sniffing, social engineering + rappel Wi‑Fi."},{"date":"24/09","day":"Jeudi","study":"Cours : bloc M10–15","mods":[1,2,3,5,6,17],"count":20,"why":"Deuxième passage espacé sur les notions les plus anciennes et les outils offensifs."},{"date":"25/09","day":"Vendredi","study":"Cours : bloc M10–15","mods":[4,7,8,9,16,17],"count":20,"why":"Deuxième passage sur énumération, réseau, social, Wi‑Fi et mobile."},{"date":"26/09","day":"Samedi","study":"Cours : M20","mods":[10,11,12,13,14,15,3,6],"count":25,"why":"Premier rappel du bloc 10–15 juste après l’avoir travaillé, avec un peu de scanning/system hacking."},{"date":"27/09","day":"Dimanche","study":"Cours : M18–19","mods":[1,2,3,4,5,6,7,8,9,16,17,20],"count":25,"why":"Grand rappel des anciens modules + M20 étudié la veille."},{"date":"28/09","day":"Lundi","study":"Cours : M18–19","mods":[10,11,12,13,14,15,16,17,20],"count":25,"why":"Deuxième rappel du bloc 10–15 avant les trois journées de révision globale."},{"date":"29/09","day":"Mardi","study":"Révision","mods":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],"count":40,"why":"Mix complet. Objectif : récupération active, pas relecture passive."},{"date":"30/09","day":"Mercredi","study":"Révision","mods":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],"count":45,"why":"Mix complet plus long, avec priorité aux erreurs détectées la veille."},{"date":"01/10","day":"Jeudi","study":"Révision légère","mods":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],"count":30,"why":"Dernier passage court et propre : concepts, outils, ports, puis arrêt pour arriver fraîche à l’examen."},{"date":"02/10","day":"Vendredi","study":"EXAM","mods":[],"count":0,"why":"Pas de gros quiz. Au maximum un coup d’œil très court à tes erreurs et aux associations outil → rôle."}]};
+    const days = DATA.days;
+    days.unshift({
+      date:"20/09",
+      day:"Dimanche",
+      study:"Cours : M16–17",
+      mods:[1,2,3,4,5,6,7,8,9,16,17],
+      count:100,
+      why:"Premier rappel quotidien : consolidation de M1–9, Wireless et Mobile avant d’attaquer le bloc M10–15."
+    });
+    const questions = DATA.questions;
+    const moduleNames = DATA.modules;
+
+    // Banques dédiées : elles évitent que les quiz Ports et Outils recyclent
+    // simplement les mêmes questions du rappel général.
+    const EXTRA_DIRECT = [
+      {m:1,q:"What is the main purpose of a penetration-test scope?",o:["Define authorized targets and boundaries","Guarantee that every vulnerability will be found","Replace the final report","Disable all production protections"],a:0,e:"Le scope définit précisément ce qui est autorisé et interdit pendant le test.",t:"concept"},
+      {m:1,q:"Which testing approach gives the assessor no internal knowledge?",o:["Black-box testing","White-box testing","Gray-box testing","Code review"],a:0,e:"En black box, le testeur commence comme un attaquant externe sans information interne fournie.",t:"concept"},
+      {m:2,q:"What is passive reconnaissance?",o:["Collecting information without directly interacting with the target","Sending SYN packets to every target port","Attempting passwords against a login page","Uploading a web shell"],a:0,e:"La reconnaissance passive exploite des sources tierces ou publiques sans contacter directement la cible.",t:"concept"},
+      {m:2,q:"What can a DNS zone transfer expose when misconfigured?",o:["A domain's hostnames and DNS records","Local password hashes","Wi-Fi encryption keys","Process memory"],a:0,e:"Un AXFR mal protégé peut révéler une grande partie de la structure DNS du domaine.",t:"concept"},
+      {m:3,q:"What does an Nmap -Pn scan assume?",o:["The host is up and host discovery is skipped","Every port is open","UDP is the only transport","The target is running Windows"],a:0,e:"-Pn saute la phase de découverte d’hôte et traite la cible comme active.",t:"concept"},
+      {m:3,q:"A closed TCP port normally responds to a SYN with which flags?",o:["RST","SYN-ACK","FIN-ACK","No response in every case"],a:0,e:"Dans le cas classique, un port TCP fermé répond par RST, tandis qu’un port ouvert répond SYN-ACK.",t:"concept"},
+      {m:4,q:"What is enumeration?",o:["Actively extracting detailed information from discovered services","Only finding whether a host is online","Deleting system logs","Encrypting captured traffic"],a:0,e:"L’énumération va plus loin que le scan : utilisateurs, partages, groupes, versions ou ressources.",t:"concept"},
+      {m:4,q:"What is an SNMP community string?",o:["A shared value used to control SNMP access in older versions","A TLS certificate","A Windows password hash","A DNS record"],a:0,e:"SNMPv1/v2c utilisent des community strings, souvent comparées à des mots de passe partagés.",t:"concept"},
+      {m:5,q:"What is a false negative in vulnerability scanning?",o:["A real vulnerability the scanner fails to report","A reported issue that is not present","A vulnerability with a low CVSS score","A finding confirmed manually"],a:0,e:"Un faux négatif est une vulnérabilité existante que le scanner ne détecte pas.",t:"concept"},
+      {m:5,q:"Which factor most directly turns technical severity into contextual risk?",o:["Business exposure and likelihood","The length of the CVE identifier","The scanner vendor's logo","The number of open browser tabs"],a:0,e:"Le risque réel combine la sévérité technique avec l’exposition, la vraisemblance et l’impact métier.",t:"concept"},
+      {m:6,q:"What is pass-the-hash?",o:["Authenticating with a captured password hash without recovering the plaintext password","Cracking a hash with a rainbow table","Sending a password by e-mail","Replacing a file checksum"],a:0,e:"Pass-the-hash réutilise directement un hash d’authentification compatible, sans connaître le mot de passe en clair.",t:"concept"},
+      {m:6,q:"What is the difference between online and offline password cracking?",o:["Online targets a live service; offline tests captured hashes locally","Online always uses a GPU; offline never does","Offline requires the victim to stay connected","There is no difference"],a:0,e:"En ligne, chaque essai touche le service et peut être bloqué; hors ligne, on teste localement un hash récupéré.",t:"concept"},
+      {m:7,q:"What is a logic bomb?",o:["Malicious code triggered by a specific condition or event","A worm that only spreads by Bluetooth","A firewall rule","A password-spraying technique"],a:0,e:"Une logic bomb reste inactive jusqu’à une condition précise : date, suppression d’un compte, événement système, etc.",t:"concept"},
+      {m:7,q:"What does a command-and-control server provide to malware?",o:["Instructions and a channel for controlling infected systems","Automatic operating-system patching","A trusted certificate authority","Physical access to the device"],a:0,e:"Le C2 permet au malware de recevoir des ordres et souvent d’exfiltrer des données.",t:"concept"},
+      {m:8,q:"Why is ARP spoofing primarily a local-network attack?",o:["ARP resolves addresses inside the local broadcast domain","ARP packets are routed across the Internet","It only affects DNS servers","It requires a cellular baseband"],a:0,e:"ARP fonctionne dans le réseau local et ses requêtes ne sont normalement pas routées sur Internet.",t:"concept"},
+      {m:8,q:"What is the main difference between sniffing and spoofing?",o:["Sniffing observes traffic; spoofing impersonates an identity or address","Sniffing changes DNS; spoofing only reads files","They are identical","Spoofing always requires malware"],a:0,e:"Le sniffing écoute; le spoofing falsifie une identité, une adresse ou une source.",t:"concept"},
+      {m:9,q:"What is tailgating?",o:["Following an authorized person into a restricted area","Sending phishing messages to executives","Leaving infected USB drives","Listening to a phone call"],a:0,e:"Le tailgating consiste à profiter du passage d’une personne autorisée pour entrer derrière elle.",t:"concept"},
+      {m:9,q:"What is quid pro quo social engineering?",o:["Offering a benefit or service in exchange for information or action","Threatening a server with DDoS","Cloning a SIM card","Changing an ARP table"],a:0,e:"Le quid pro quo promet quelque chose en échange, par exemple une fausse assistance contre des identifiants.",t:"concept"},
+      {m:16,q:"What is the main difference between managed and monitor Wi-Fi modes?",o:["Managed joins an AP as a client; monitor captures raw 802.11 frames","Managed captures every channel; monitor disables reception","Monitor automatically cracks WPA","There is no difference"],a:0,e:"Managed sert à se connecter normalement; monitor sert à observer les trames Wi-Fi sur un canal.",t:"concept"},
+      {m:16,q:"What does a WPA/WPA2 four-way handshake prove during password testing?",o:["Whether a guessed password derives valid cryptographic values","The plaintext password itself","The router administration password","That the AP uses WEP"],a:0,e:"Le handshake ne révèle pas le mot de passe : il permet seulement de vérifier hors ligne un candidat.",t:"concept"},
+      {m:17,q:"What is the main difference between static and dynamic mobile-app analysis?",o:["Static inspects without execution; dynamic observes the running app","Static requires root; dynamic never uses a device","Dynamic only reads source code","They are the same"],a:0,e:"L’analyse statique inspecte le paquet et le code; la dynamique observe le comportement pendant l’exécution.",t:"concept"},
+      {m:17,q:"What is the purpose of Android Factory Reset Protection?",o:["Prevent unauthorized reuse after a factory reset","Encrypt every network packet","Block all third-party applications","Hide the device's IMEI"],a:0,e:"FRP demande l’ancien compte associé après une réinitialisation non autorisée d’un appareil protégé.",t:"concept"}
+    ];
+
+    const PORT_FACTS = [
+      ["FTP data",20,"TCP",4],["FTP control",21,"TCP",4],["SSH/SFTP",22,"TCP",4],["Telnet",23,"TCP",4],["SMTP",25,"TCP",4],
+      ["DNS",53,"TCP/UDP",2],["DHCP server",67,"UDP",4],["DHCP client",68,"UDP",4],["TFTP",69,"UDP",4],["HTTP",80,"TCP",13],
+      ["Kerberos",88,"TCP/UDP",4],["POP3",110,"TCP",4],["RPC endpoint mapper",135,"TCP/UDP",4],["NetBIOS name service",137,"UDP",4],["NetBIOS datagram",138,"UDP",4],
+      ["NetBIOS session",139,"TCP",4],["IMAP",143,"TCP",4],["SNMP queries",161,"UDP",4],["SNMP traps",162,"UDP",4],["LDAP",389,"TCP/UDP",4],
+      ["HTTPS",443,"TCP",13],["SMB",445,"TCP",4],["Syslog",514,"UDP",12],["LDAPS",636,"TCP",4],["IMAPS",993,"TCP",4],
+      ["POP3S",995,"TCP",4],["Microsoft SQL Server",1433,"TCP",15],["Oracle Database",1521,"TCP",15],["RADIUS authentication",1812,"UDP",4],["RADIUS accounting",1813,"UDP",4],
+      ["NFS",2049,"TCP/UDP",4],["MySQL",3306,"TCP",15],["RDP",3389,"TCP/UDP",4],["PostgreSQL",5432,"TCP",15],["VNC",5900,"TCP",6],
+      ["SIP",5060,"TCP/UDP",4],["SIP over TLS",5061,"TCP",4],["XMPP client",5222,"TCP",4],["WinRM HTTP",5985,"TCP",6],["WinRM HTTPS",5986,"TCP",6],
+      ["Redis",6379,"TCP",15],["HTTP alternative",8080,"TCP",13],["MQTT",1883,"TCP",18],["MQTT over TLS",8883,"TCP",18],["Modbus/TCP",502,"TCP",18]
+    ];
+
+    const TOOL_FACTS = [
+      ["theHarvester","Gather public e-mails, hosts, and subdomains",2],["Recon-ng","Automate modular OSINT reconnaissance",2],["Maltego","Map relationships between people, domains, infrastructure, and organizations",2],["Shodan","Search for Internet-exposed systems and services",2],["FOCA","Extract metadata from public documents",2],["Subfinder","Discover subdomains from passive sources",2],["Sublist3r","Enumerate subdomains using search engines and services",2],["DNSenum","Enumerate DNS records and attempt DNS discovery",2],
+      ["Nmap","Discover hosts, ports, services, versions, and operating systems",3],["Masscan","Perform very fast large-scale port scanning",3],["hping3","Craft and send custom TCP/IP packets",3],["Netcat","Read or write network connections and create simple listeners",3],["Unicornscan","Perform asynchronous network reconnaissance",3],
+      ["enum4linux","Enumerate SMB and Samba information",4],["smbclient","Access and enumerate SMB shares from the command line",4],["snmpwalk","Query a tree of SNMP OIDs",4],["ldapsearch","Query LDAP directory information",4],["NBTscan","Scan networks for NetBIOS name information",4],["rpcclient","Run MS-RPC client queries against Windows or Samba",4],
+      ["Nessus","Scan systems for known vulnerabilities and misconfigurations",5],["OpenVAS / Greenbone","Perform open-source vulnerability assessment",5],["Qualys VMDR","Provide cloud-based vulnerability management, detection, and response",5],["Nuclei","Run template-based security checks at scale",5],
+      ["Metasploit","Develop, select, configure, and run exploits and payloads",6],["msfvenom","Generate and encode Metasploit payloads",6],["Hydra","Perform online authentication guessing against network services",6],["Hashcat","Crack captured password hashes, often with GPU acceleration",6],["John the Ripper","Audit and crack password hashes offline",6],["Responder","Poison LLMNR/NBT-NS/mDNS and capture challenge-response material",6],["Mimikatz","Extract or manipulate Windows authentication material",6],["BloodHound","Map Active Directory relationships and attack paths",6],["PowerSploit","Provide PowerShell modules for authorized post-exploitation testing",6],
+      ["VirusTotal","Check files, hashes, and URLs using many security engines",7],["YARA","Match files or memory against analyst-defined malware patterns",7],["Cuckoo Sandbox","Analyze suspicious files dynamically in an isolated environment",7],["PEStudio","Perform static inspection of Windows PE files",7],["Process Monitor","Observe real-time file, registry, process, and thread activity",7],
+      ["Wireshark","Capture and analyze network packets graphically",8],["tcpdump","Capture and filter packets from the command line",8],["Ettercap","Perform local-network sniffing and MITM testing",8],["Bettercap","Provide a modular network reconnaissance and MITM framework",8],["macof","Flood a switch CAM table with generated MAC addresses",8],
+      ["Social-Engineer Toolkit","Build authorized social-engineering test scenarios",9],["GoPhish","Create and measure authorized phishing simulations",9],["King Phisher","Run phishing campaign simulations",9],["BeEF","Assess browser security through a hooked browser",9],
+      ["LOIC","Generate TCP, UDP, or HTTP flood traffic",10],["HOIC","Generate high-volume HTTP flood traffic",10],["Slowloris","Keep many HTTP connections partially open",10],
+      ["Burp Suite","Intercept, modify, replay, and test web requests",14],["OWASP ZAP","Proxy and scan web applications",14],["Nikto","Check web servers for dangerous files and known misconfigurations",13],["Gobuster","Brute-force web paths, virtual hosts, or DNS names",13],["WPScan","Assess WordPress sites, plugins, themes, and users",14],["sqlmap","Automate detection and exploitation of SQL injection",15],
+      ["ProxyChains","Route supported application traffic through one or more proxies",12],["Snort","Detect or prevent network intrusions using rules",12],["Suricata","Provide IDS/IPS and network-security monitoring",12],["Honeyd","Create virtual hosts and honeypot services",12],
+      ["airmon-ng","Enable and manage monitor mode for wireless interfaces",16],["airodump-ng","Capture and display 802.11 networks, clients, and handshakes",16],["aireplay-ng","Inject 802.11 frames and perform authorized deauthentication tests",16],["aircrack-ng","Test captured Wi-Fi authentication material against candidates",16],["Kismet","Passively discover and monitor wireless networks",16],["Reaver","Audit WPS PIN security",16],["Wifite","Automate several authorized wireless auditing workflows",16],
+      ["ADB","Communicate with and debug authorized Android devices",17],["MobSF","Automate static and dynamic mobile application assessment",17],["Frida","Instrument running applications dynamically",17],["Kali NetHunter","Provide a Kali-based mobile penetration-testing platform",17],["PhoneSploit Pro","Manage authorized Android devices through ADB",17],["JADX","Decompile Android DEX/APK content into readable Java-like code",17],["apktool","Decode and rebuild Android application resources and smali",17],
+      ["Binwalk","Inspect firmware images and extract embedded content",18],["Firmwalker","Search extracted firmware for interesting files and weaknesses",18],["MQTT Explorer","Inspect MQTT brokers, topics, and messages",18],
+      ["Prowler","Assess AWS environments against security best practices",19],["ScoutSuite","Perform multi-cloud security configuration assessment",19],["Pacu","Provide an AWS exploitation framework for authorized testing",19],["CloudMapper","Analyze and visualize AWS environments",19],["Trivy","Scan containers, images, filesystems, and IaC for weaknesses",19],
+      ["OpenSSL","Work with TLS, certificates, keys, hashes, and cryptographic operations",20],["GnuPG","Encrypt and sign data using OpenPGP",20]
+    ];
+
+    const allModules = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
+    function availableModules(dayIndex){
+      if(dayIndex === days.length-1) return [];
+      if(dayIndex === 0) return [1,2,3,4,5,6,7,8,9,16,17];
+      const base=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17];
+      if(dayIndex>=6) base.push(20);
+      if(dayIndex>=7) base.push(18,19);
+      return base;
+    }
+
+    const dayList = root.querySelector('#ceh-day-list');
+    const overview = root.querySelector('#ceh-overview');
+    const quiz = root.querySelector('#ceh-quiz');
+    const summary = root.querySelector('#ceh-summary');
+    const selectedPlan = root.querySelector('#ceh-selected-plan');
+    const overviewBtn = root.querySelector('#ceh-overview-btn');
+    const todayBtn = root.querySelector('#ceh-today-btn');
+    const quizDay = root.querySelector('#ceh-quiz-day');
+    const quizMeta = root.querySelector('#ceh-quiz-meta');
+    const progress = root.querySelector('#ceh-progress');
+    const moduleBadge = root.querySelector('#ceh-module-badge');
+    const counter = root.querySelector('#ceh-counter');
+    const questionEl = root.querySelector('#ceh-question');
+    const optionsEl = root.querySelector('#ceh-options');
+    const feedback = root.querySelector('#ceh-feedback');
+    const nextBtn = root.querySelector('#ceh-next');
+    const shortcut = root.querySelector('#ceh-shortcut');
+    const normalBtn = root.querySelector('#ceh-mode-normal');
+    const portsBtn = root.querySelector('#ceh-mode-ports');
+    const toolsBtn = root.querySelector('#ceh-mode-tools');
+    const scoreEl = root.querySelector('#ceh-score');
+    const scoreNote = root.querySelector('#ceh-score-note');
+    const weakness = root.querySelector('#ceh-weakness');
+    const retryWrong = root.querySelector('#ceh-retry-wrong');
+    const restart = root.querySelector('#ceh-restart');
+    const backPlan = root.querySelector('#ceh-back-plan');
+
+    let selectedDay = 0;
+    let activeMode = 'normal';
+    let quizItems = [];
+    let current = 0;
+    let correct = 0;
+    let answered = false;
+    let wrongItems = [];
+    let completed;
+    try { completed = new Set(JSON.parse(localStorage.getItem('ceh-daily-completed-v3') || '[]')); }
+    catch { completed = new Set(); }
+    let mistakeScores;
+    try { mistakeScores = JSON.parse(localStorage.getItem('ceh-daily-mistakes-v2') || '{}'); }
+    catch { mistakeScores = {}; }
+
+    function seeded(seed) {
+      let x = seed >>> 0;
+      return () => {
+        x += 0x6D2B79F5;
+        let t = x;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function shuffled(arr, rnd) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rnd() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function moduleLabel(m) {
+      return `M${m} · ${moduleNames[m] || ''}`;
+    }
+
+    function renderDays() {
+      dayList.innerHTML = '';
+      days.forEach((d, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ceh-day rounded-lg border border-[var(--viz-border)] px-3 py-2 text-left';
+        if (i === selectedDay) b.classList.add('active');
+        const doneCount = ['normal','ports','tools'].filter(mode => completed.has(`${i}:${mode}`)).length;
+        if(doneCount===3) b.classList.add('done');
+        b.innerHTML = `<span class="block text-xs text-[var(--viz-muted)]">${d.day} · ${doneCount}/3</span><span class="block text-sm font-semibold">${d.date}</span><span class="block truncate text-xs text-[var(--viz-muted)]">${d.study}</span>`;
+        b.addEventListener('click', () => selectDay(i));
+        dayList.appendChild(b);
+      });
+    }
+
+    function renderPlan() {
+      const d = days[selectedDay];
+      const mods = d.mods.length ? d.mods.map(m => `<span class="rounded-full border border-[var(--viz-border)] px-2 py-1 text-xs">M${m}</span>`).join(' ') : '';
+      selectedPlan.innerHTML = `
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div class="text-sm text-[var(--viz-muted)]">${d.day} ${d.date}</div>
+            <div class="mt-1 text-lg font-semibold">${d.study}</div>
+          </div>
+          <div class="rounded-lg border border-[var(--viz-border)] px-3 py-2 text-sm font-semibold">${d.count ? '3 quiz · 100 questions' : 'Pas de quiz'}</div>
+        </div>
+        <p class="mt-3 text-sm">${d.why}</p>
+        ${mods ? `<div class="mt-3"><div class="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--viz-muted)]">Modules à réactiver</div><div class="flex flex-wrap gap-1.5">${mods}</div></div>` : ''}
+        ${d.count ? `<div class="mt-4 flex flex-wrap gap-2"><button data-start="normal" type="button" class="rounded-lg bg-[var(--viz-accent-bg)] px-4 py-2 text-sm font-semibold">Rappel · 50</button><button data-start="ports" type="button" class="rounded-lg border border-[var(--viz-border)] px-4 py-2 text-sm font-semibold">Ports · 20</button><button data-start="tools" type="button" class="rounded-lg border border-[var(--viz-border)] px-4 py-2 text-sm font-semibold">Outils · 30</button></div>` : '<p class="mt-3 text-sm text-[var(--viz-muted)]">Le 2/10 : pas de bachotage. Tu gardes ton énergie pour l’examen.</p>'}
+      `;
+      selectedPlan.querySelectorAll('[data-start]').forEach(start => start.addEventListener('click', () => startQuiz(start.dataset.start)));
+    }
+
+    function selectDay(i) {
+      selectedDay = Math.max(0, Math.min(days.length - 1, i));
+      activeMode = 'normal';
+      renderDays();
+      renderPlan();
+      overview.classList.remove('hidden');
+      quiz.classList.add('hidden');
+      summary.classList.add('hidden');
+    }
+
+    function makePortQuestions(rnd, modules) {
+      const facts = shuffled(PORT_FACTS.filter(x => modules.includes(x[3])), rnd);
+      return facts.map((f, idx) => {
+        const reverse = (idx + selectedDay) % 2 === 1;
+        const other = shuffled(PORT_FACTS.filter(x => x !== f && modules.includes(x[3])), rnd).slice(0,3);
+        if(reverse){
+          return {id:`port:${f[0]}`,m:f[3],t:'port',q:`Which service normally uses port ${f[1]} over ${f[2]}?`,o:[f[0],...other.map(x=>x[0])],a:0,e:`${f[0]} utilise normalement le port ${f[1]} en ${f[2]}.`};
+        }
+        return {id:`port:${f[0]}`,m:f[3],t:'port',q:`Which port and transport pair is normally associated with ${f[0]}?`,o:[`${f[1]} · ${f[2]}`,...other.map(x=>`${x[1]} · ${x[2]}`)],a:0,e:`${f[0]} → port ${f[1]} · ${f[2]}.`};
+      });
+    }
+
+    function makeToolQuestions(rnd, modules) {
+      const facts = shuffled(TOOL_FACTS.filter(x => modules.includes(x[2])), rnd);
+      return facts.map((f, idx) => {
+        const reverse = (idx + selectedDay) % 2 === 0;
+        const other = shuffled(TOOL_FACTS.filter(x => x !== f && modules.includes(x[2])), rnd).slice(0,3);
+        if(reverse){
+          return {id:`tool:${f[0]}`,m:f[2],t:'tool',q:`Which tool is primarily used to ${f[1].charAt(0).toLowerCase()+f[1].slice(1)}?`,o:[f[0],...other.map(x=>x[0])],a:0,e:`${f[0]} : ${f[1]}.`};
+        }
+        return {id:`tool:${f[0]}`,m:f[2],t:'tool',q:`What is the primary purpose of ${f[0]}?`,o:[f[1],...other.map(x=>x[1])],a:0,e:`${f[0]} : ${f[1]}.`};
+      });
+    }
+
+    function buildQuiz(mode, overrideItems) {
+      const d = days[selectedDay];
+      if (overrideItems && overrideItems.length) return overrideItems.map(x => ({...x}));
+      const modules = availableModules(selectedDay);
+      const seed = (selectedDay + 1) * 7919 + (mode === 'tools' ? 313 : mode === 'ports' ? 719 : 17);
+      const rnd = seeded(seed);
+      let pool;
+      if(mode === 'ports') pool = makePortQuestions(rnd, modules);
+      else if(mode === 'tools') pool = makeToolQuestions(rnd, modules);
+      else {
+        pool = shuffled(questions.concat(EXTRA_DIRECT).filter(x => modules.includes(x.m) && x.t === 'concept'), rnd);
+        const guaranteed = [];
+        const seen = new Set();
+        for (const m of modules) {
+          const candidates = pool.filter(x => x.m === m && !seen.has(x.q));
+          if (candidates.length) {
+            const pick = candidates[Math.floor(rnd() * candidates.length)];
+            guaranteed.push(pick);
+            seen.add(pick.q);
+          }
+        }
+        const rest = pool.filter(x => !seen.has(x.q));
+        pool = guaranteed.concat(shuffled(rest, rnd));
+      }
+      pool.sort((a,b)=>(mistakeScores[b.id||b.q]||0)-(mistakeScores[a.id||a.q]||0));
+      const target = mode === 'normal' ? 50 : mode === 'ports' ? 20 : 30;
+      return pool.slice(0, target);
+    }
+
+    function prepareItem(item, idx) {
+      const seed = (selectedDay + 1) * 100003 + (idx + 1) * 97 + item.m;
+      const rnd = seeded(seed);
+      const mapped = item.o.map((text, i) => ({text, correct: i === item.a}));
+      const shuffledOptions = shuffled(mapped, rnd);
+      return {...item, choices: shuffledOptions, answerIndex: shuffledOptions.findIndex(x => x.correct)};
+    }
+
+    function startQuiz(mode = 'normal', overrideItems = null) {
+      const d = days[selectedDay];
+      if (!d.count && !overrideItems) return;
+      activeMode = mode;
+      const raw = buildQuiz(mode, overrideItems);
+      quizItems = raw.map(prepareItem);
+      current = 0;
+      correct = 0;
+      answered = false;
+      wrongItems = [];
+      overview.classList.add('hidden');
+      summary.classList.add('hidden');
+      quiz.classList.remove('hidden');
+      normalBtn.className = mode === 'normal' ? 'rounded-lg bg-[var(--viz-accent-bg)] px-3 py-2 text-sm font-medium' : 'rounded-lg border border-[var(--viz-border)] px-3 py-2 text-sm font-medium';
+      portsBtn.className = mode === 'ports' ? 'rounded-lg bg-[var(--viz-accent-bg)] px-3 py-2 text-sm font-medium' : 'rounded-lg border border-[var(--viz-border)] px-3 py-2 text-sm font-medium';
+      toolsBtn.className = mode === 'tools' ? 'rounded-lg bg-[var(--viz-accent-bg)] px-3 py-2 text-sm font-medium' : 'rounded-lg border border-[var(--viz-border)] px-3 py-2 text-sm font-medium';
+      const modeName = mode === 'normal' ? 'Rappel direct' : mode === 'ports' ? 'Ports & transports' : 'Outils';
+      quizDay.textContent = `${d.day} ${d.date} — ${modeName}`;
+      quizMeta.textContent = mode === 'normal' ? `${quizItems.length} questions sur les notions déjà étudiées.` : mode === 'ports' ? `${quizItems.length} associations service ↔ port ↔ TCP/UDP.` : `${quizItems.length} associations outil ↔ fonction.`;
+      renderQuestion();
+      root.focus();
+    }
+
+    function renderQuestion() {
+      if (current >= quizItems.length) return finishQuiz();
+      const item = quizItems[current];
+      answered = false;
+      feedback.classList.add('hidden');
+      nextBtn.classList.add('hidden');
+      shortcut.textContent = 'Clavier : 1–4';
+      progress.style.width = `${(current / quizItems.length) * 100}%`;
+      moduleBadge.textContent = moduleLabel(item.m);
+      counter.textContent = `${current + 1} / ${quizItems.length}`;
+      questionEl.textContent = item.q;
+      optionsEl.innerHTML = '';
+
+      item.choices.forEach((choice, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ceh-answer rounded-lg border border-[var(--viz-border)] px-3 py-3 text-sm transition-colors';
+        b.innerHTML = `<span class="mr-2 font-semibold">${i + 1}.</span>${choice.text}`;
+        b.addEventListener('click', () => answer(i));
+        optionsEl.appendChild(b);
+      });
+    }
+
+    function answer(index) {
+      if (answered) return;
+      answered = true;
+      const item = quizItems[current];
+      const buttons = [...optionsEl.querySelectorAll('button')];
+      const ok = index === item.answerIndex;
+      const memoryKey = item.id || item.q;
+      if (ok) {
+        correct++;
+        mistakeScores[memoryKey] = Math.max(0,(mistakeScores[memoryKey]||0)-1);
+      } else {
+        wrongItems.push(item);
+        mistakeScores[memoryKey] = (mistakeScores[memoryKey]||0)+2;
+      }
+      try { localStorage.setItem('ceh-daily-mistakes-v2', JSON.stringify(mistakeScores)); } catch {}
+
+      buttons.forEach((b, i) => {
+        b.disabled = true;
+        if (i === item.answerIndex) b.classList.add('correct');
+        if (i === index && !ok) b.classList.add('wrong');
+      });
+      feedback.classList.remove('hidden');
+      feedback.innerHTML = `<div class="font-semibold">${ok ? '✓ Correct' : '✗ Incorrect'}</div><div class="mt-1 text-sm text-[var(--viz-muted)]">${item.e}</div>`;
+      nextBtn.classList.remove('hidden');
+      shortcut.textContent = 'Entrée : question suivante';
+      progress.style.width = `${((current + 1) / quizItems.length) * 100}%`;
+      nextBtn.focus();
+    }
+
+    function nextQuestion() {
+      if (!answered) return;
+      current++;
+      renderQuestion();
+      if (current < quizItems.length) root.focus();
+    }
+
+    function finishQuiz() {
+      quiz.classList.add('hidden');
+      summary.classList.remove('hidden');
+      completed.add(`${selectedDay}:${activeMode}`);
+      try { localStorage.setItem('ceh-daily-completed-v3', JSON.stringify([...completed])); } catch {}
+      renderDays();
+      const total = quizItems.length || 1;
+      const pct = Math.round((correct / total) * 100);
+      scoreEl.textContent = `${correct} / ${quizItems.length} · ${pct} %`;
+      scoreNote.textContent = pct >= 85 ? 'Très bon rappel. Ne relis pas tout : cible seulement les erreurs.' : pct >= 70 ? 'Base correcte. Rejoue tes erreurs puis reviens au planning.' : 'Tu as trouvé des zones à réactiver : rejoue les erreurs, puis revois uniquement les notions concernées.';
+
+      const counts = {};
+      wrongItems.forEach(x => counts[x.m] = (counts[x.m] || 0) + 1);
+      const weak = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+      weakness.innerHTML = wrongItems.length
+        ? `<div class="text-sm font-semibold">À revoir en priorité</div><div class="mt-2 flex flex-wrap gap-2">${weak.map(([m,n]) => `<span class="rounded-full border border-[var(--viz-border)] px-2.5 py-1 text-xs">M${m} · ${n} erreur${n>1?'s':''}</span>`).join('')}</div><p class="mt-3 text-sm text-[var(--viz-muted)]">Ne retourne au cours que sur ces points précis. Ensuite, rejoue les erreurs.</p>`
+        : `<div class="text-sm font-semibold">Aucune erreur 🎯</div><p class="mt-2 text-sm text-[var(--viz-muted)]">Passe à autre chose. Inutile de relire le cours juste pour te rassurer.</p>`;
+      retryWrong.disabled = wrongItems.length === 0;
+      retryWrong.classList.toggle('opacity-50', wrongItems.length === 0);
+    }
+
+    normalBtn.addEventListener('click', () => startQuiz('normal'));
+    portsBtn.addEventListener('click', () => startQuiz('ports'));
+    toolsBtn.addEventListener('click', () => startQuiz('tools'));
+    nextBtn.addEventListener('click', nextQuestion);
+    restart.addEventListener('click', () => startQuiz(activeMode));
+    retryWrong.addEventListener('click', () => {
+      if (!wrongItems.length) return;
+      const copy = wrongItems.map(x => ({id:x.id,m:x.m,q:x.q,o:x.o,a:x.a,e:x.e,t:x.t}));
+      startQuiz(activeMode, copy);
+    });
+    backPlan.addEventListener('click', () => selectDay(selectedDay));
+    overviewBtn.addEventListener('click', () => selectDay(selectedDay));
+    todayBtn.addEventListener('click', () => {
+      const now = new Date();
+      const key = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}`;
+      const found = days.findIndex(d => d.date === key);
+      selectedDay = found >= 0 ? found : 0;
+      renderDays();
+      startQuiz('normal');
+    });
+
+    root.addEventListener('keydown', (ev) => {
+      const tag = ev.target && ev.target.tagName ? ev.target.tagName.toLowerCase() : '';
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (!quiz.classList.contains('hidden')) {
+        if (!answered && ['1','2','3','4'].includes(ev.key)) {
+          const idx = Number(ev.key) - 1;
+          if (idx < (quizItems[current]?.choices.length || 0)) {
+            ev.preventDefault();
+            answer(idx);
+          }
+        } else if (answered && ev.key === 'Enter') {
+          ev.preventDefault();
+          nextQuestion();
+        }
+      }
+    });
+
+    renderDays();
+    renderPlan();
+  })();
+  </script>
+</div>
+</body>
+</html>
